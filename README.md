@@ -42,6 +42,19 @@ blog-collaboratif-backend/
 - Middleware `verifyToken` pour protéger les routes
 - Middleware `authorizeRoles` pour la gestion des permissions (Admin, Éditeur, Rédacteur, Lecteur)
 
+# User Service - Blog Collaboratif (Microservice)
+
+## 📌 Microservices
+Le **User Service** est un microservice indépendant qui gère :
+- L'authentification des utilisateurs
+- L'inscription
+- La connexion avec **JWT Access Token** et **Refresh Token**
+- La gestion des rôles (Admin, Éditeur, Rédacteur, Lecteur)
+- Les routes sécurisées par middleware d'autorisation
+- La sécurité avec **bcrypt** (hashage des mots de passe), **CORS** et **Rate Limiting**
+
+Ce microservice fonctionne de manière autonome et expose ses propres routes API sur un port dédié (**5001** par défaut).
+
 6. **Mise en ligne sur GitHub**
 - Création d'un dépôt GitHub : [https://github.com/fedi9/blog-collaboratif-backend](https://github.com/fedi9/blog-collaboratif-backend)
 - Configuration du `.gitignore`
