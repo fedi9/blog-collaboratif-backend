@@ -52,37 +52,17 @@ git clone https://github.com/fedi9/blog-collaboratif-backend.git
 cd blog-collaboratif-backend
 Installer les dépendances
 
-bash
-Copy
-Edit
 npm install
 Configurer les variables d'environnement
 Créer un fichier .env :
 
 env
-Copy
-Edit
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/blog-collaboratif
 JWT_SECRET=unsecretfort
 REFRESH_SECRET=unautresecret
 Démarrer le serveur
 
-bash
-Copy
-Edit
 npm run dev
 📜 Licence
 Ce projet est réalisé dans le cadre d'un test technique. Libre pour un usage pédagogique.
-
-yaml
-Copy
-Edit
-
----
-
-## 📌 Étapes pour l’ajouter à GitHub
-
-1. Créer le fichier `README.md` :
-```bash
-touch README.md
