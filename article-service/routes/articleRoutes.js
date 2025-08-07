@@ -38,6 +38,7 @@ router.post('/', verifyToken, async (req, res) => {
  *  - limit : nombre d’articles par page (par défaut 10)
  */
 router.get('/', verifyToken, async (req, res) => {
+//router.get('/', async (req, res) => {
     try {
         const { search, tag, page = 1, limit = 10 } = req.query;
 
