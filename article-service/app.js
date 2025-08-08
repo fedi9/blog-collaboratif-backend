@@ -16,33 +16,23 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Rate Limiting - Configuration plus permissive pour les tests
-// Pour désactiver complètement le rate limiting en développement, décommentez la ligne suivante :
-// const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 2000 });
+// Rate Limiting - Configuration pour la production
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // 60 requêtes par minute
+  message: 'Trop de requêtes depuis cette IP, réessayez dans 1 minute.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting for certain paths (optionnel)
+  skip: (req) => {
+    // Skip rate limiting for health checks or specific test endpoints
+    return req.path === '/health' || req.path === '/api/articles/test';
+  }
+});
 
-// Configuration actuelle (plus permissive)
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 2000, // 2000 requêtes par 15 minutes (au lieu de 10000 par 30 jours)
-//   message: 'Trop de requêtes depuis cette IP, réessayez dans 15 minutes.',
-//   standardHeaders: true,
-//   legacyHeaders: false,
-//   // Skip rate limiting for certain paths (optionnel)
-//   skip: (req) => {
-//     // Skip rate limiting for health checks or specific test endpoints
-//     return req.path === '/health' || req.path === '/api/articles/test';
-//   }
-// });
-
-// Désactiver le rate limiting en mode développement (NODE_ENV=development)
-// if (process.env.NODE_ENV === 'development') {
-//   console.log('⚠️  Rate limiting désactivé en mode développement');
-// } else {
-//   app.use(limiter);
-// }
-
-// TEMPORAIRE : Rate limiting désactivé pour les tests
-console.log('⚠️  Rate limiting temporairement désactivé pour les tests');
+// Appliquer le rate limiting
+app.use(limiter);
+console.log('✅ Rate limiting activé: 60 requêtes par minute');
 
 
 // Routes
