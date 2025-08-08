@@ -10,14 +10,10 @@ const articleSchema = new mongoose.Schema({
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // IDs des utilisateurs qui ont liké
 }, { timestamps: true });
 
-// Index pour optimiser les recherches par titre et tags
- articleSchema.index({ title: 'text', tags: 'text' });
+// Index pour optimiser les recherches par titre et contenu
+articleSchema.index({ title: 'text', content: 'text' });
 
-// // 🔹 Index texte pour recherche par titre
-// articleSchema.index({ title: 'text' });
-
-// // 🔹 Index normal pour recherche rapide par tags
-// articleSchema.index({ tags: 1 });
-
+// Index normal pour recherche rapide par tags
+articleSchema.index({ tags: 1 });
 
 module.exports = mongoose.model('Article', articleSchema);

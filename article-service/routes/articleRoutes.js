@@ -31,7 +31,7 @@ router.post('/', verifyToken, async (req, res) => {
 /**
  * 📌 GET /api/articles
  * Query params :
- *  - search : mot-clé pour chercher dans le titre
+ *  - search : mot-clé pour chercher dans le titre et le contenu
  *  - tag : filtrer par tag spécifique
  *  - page : numéro de page (par défaut 1)
  *  - limit : nombre d'articles par page (par défaut 10)
@@ -41,15 +41,29 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         const { search, tag, page = 1, limit = 10 } = req.query;
 
+        console.log('🔍 Recherche - Paramètres reçus:', { search, tag, page, limit });
+
         const filter = {};
-        if (search) {
-            filter.$text = { $search: search };
+        
+        // Recherche dans le titre et le contenu
+        if (search && search.trim()) {
+            const searchTerm = search.trim();
+            filter.$or = [
+                { title: { $regex: searchTerm, $options: 'i' } },
+                { content: { $regex: searchTerm, $options: 'i' } }
+            ];
+            console.log('🔍 Filtre de recherche appliqué:', filter);
         }
-        if (tag) {
-            filter.tags = tag;
+        
+        // Filtre par tag
+        if (tag && tag.trim()) {
+            filter.tags = { $in: [tag.trim()] };
+            console.log('🏷️ Filtre de tag appliqué:', filter);
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        console.log('🔍 Filtre final:', filter);
 
         const articles = await Article.find(filter)
             .skip(skip)
@@ -57,6 +71,8 @@ router.get('/', verifyToken, async (req, res) => {
             .sort({ createdAt: -1 });
 
         const total = await Article.countDocuments(filter);
+
+        console.log(`📊 Résultats: ${articles.length} articles trouvés sur ${total} total`);
 
         // 🔹 Récupérer les infos des auteurs depuis UserService
        const articlesWithAuthors = await Promise.all(
@@ -88,6 +104,7 @@ router.get('/', verifyToken, async (req, res) => {
             articles: articlesWithAuthors
         });
     } catch (err) {
+        console.error('❌ Erreur lors de la recherche:', err);
         res.status(500).json({ message: err.message });
     }
 });
