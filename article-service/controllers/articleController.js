@@ -32,6 +32,76 @@ const updateArticle = async (req, res) => {
     }
 };
 
+// Liker/unliker un article (toggle par utilisateur)
+const likeArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.id; // Utiliser req.user.id au lieu de req.user.userId
+        
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: 'Article non trouvé.' });
+        }
+
+        // Vérifier si l'utilisateur a déjà liké cet article
+        const userLikedIndex = article.likedBy.indexOf(userId);
+        
+        if (userLikedIndex > -1) {
+            // L'utilisateur a déjà liké → retirer le like
+            article.likedBy.splice(userLikedIndex, 1);
+            article.likeCount = Math.max(0, article.likeCount - 1);
+            await article.save();
+            
+            res.json({
+                message: 'Like retiré avec succès',
+                likeCount: article.likeCount,
+                userLiked: false,
+                article: article
+            });
+        } else {
+            // L'utilisateur n'a pas encore liké → ajouter le like
+            article.likedBy.push(userId);
+            article.likeCount += 1;
+            await article.save();
+            
+            res.json({
+                message: 'Article liké avec succès',
+                likeCount: article.likeCount,
+                userLiked: true,
+                article: article
+            });
+        }
+
+    } catch (err) {
+        console.error('Error toggling article like:', err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Vérifier si un utilisateur a liké un article
+const checkUserLike = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.id; // Utiliser req.user.id au lieu de req.user.userId
+        
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: 'Article non trouvé.' });
+        }
+
+        const userLiked = article.likedBy.includes(userId);
+        
+        res.json({
+            userLiked: userLiked,
+            likeCount: article.likeCount
+        });
+
+    } catch (err) {
+        console.error('Error checking user like:', err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
 // 🔹 DELETE /api/articles/:id
 const deleteArticle = async (req, res) => {
     try {
@@ -57,4 +127,6 @@ const deleteArticle = async (req, res) => {
 module.exports = {
     updateArticle,
     deleteArticle,
+    likeArticle,
+    checkUserLike
 };

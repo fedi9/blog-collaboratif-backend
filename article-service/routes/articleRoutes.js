@@ -1,8 +1,7 @@
 const express = require('express');
 const Article = require('../models/Article');
 const { verifyToken } = require('../middlewares/authMiddleware');
-const { updateArticle } = require('../controllers/articleController');
-const { deleteArticle } = require('../controllers/articleController');
+const { updateArticle, deleteArticle, likeArticle, checkUserLike } = require('../controllers/articleController');
 
 const axios = require('axios');
 
@@ -35,7 +34,7 @@ router.post('/', verifyToken, async (req, res) => {
  *  - search : mot-clé pour chercher dans le titre
  *  - tag : filtrer par tag spécifique
  *  - page : numéro de page (par défaut 1)
- *  - limit : nombre d’articles par page (par défaut 10)
+ *  - limit : nombre d'articles par page (par défaut 10)
  */
 router.get('/', verifyToken, async (req, res) => {
 //router.get('/', async (req, res) => {
@@ -92,6 +91,12 @@ router.get('/', verifyToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+// 📌 Vérifier le statut de like d'un utilisateur pour un article
+router.get('/:articleId/like', verifyToken, checkUserLike);
+
+// 📌 Liker/unliker un article
+router.post('/:articleId/like', verifyToken, likeArticle);
 
 router.delete('/:id', verifyToken, deleteArticle);
 
