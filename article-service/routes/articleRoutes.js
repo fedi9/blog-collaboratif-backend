@@ -82,7 +82,7 @@ router.get('/', verifyToken, async (req, res) => {
             console.log("Authorization Header envoyé :", req.headers.authorization);
 
             const userRes = await axios.get(
-                `http://localhost:5000/api/users/${article.author}`,
+                `http://localhost:5001/api/users/${article.author}`,
                 {
                     headers: {
                         Authorization: req.headers.authorization

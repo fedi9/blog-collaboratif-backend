@@ -1,5 +1,6 @@
 const ArticleStats = require('../models/ArticleStats');
 const Article = require('../models/Article');
+const axios = require('axios');
 
 // Obtenir les statistiques de likes d'un article spécifique
 exports.getArticleStats = async (req, res) => {
@@ -84,15 +85,43 @@ exports.getGlobalStats = async (req, res) => {
         }, { totalLikes: 0 });
 
         
-        const topLikedArticles = validStats
-            .sort((a, b) => (b.totalLikes || 0) - (a.totalLikes || 0))
-            .slice(0, 10)
-            .map(item => ({
-                article: item.article,
-                stats: {
-                    totalLikes: item.totalLikes
-                }
-            }));
+        // Enrichir les articles avec les détails des auteurs
+        const topLikedArticles = await Promise.all(
+            validStats
+                .sort((a, b) => (b.totalLikes || 0) - (a.totalLikes || 0))
+                .slice(0, 10)
+                .map(async (item) => {
+                    let authorDetails = null;
+                    
+                    if (item.article && item.article.author) {
+                        try {
+                            console.log("Appel à UserService pour author dans stats:", item.article.author);
+                            const userRes = await axios.get(
+                                `http://localhost:5001/api/users/${item.article.author}`,
+                                {
+                                    headers: {
+                                        Authorization: req.headers.authorization
+                                    }
+                                }
+                            );
+                            authorDetails = userRes.data;
+                        } catch (error) {
+                            console.error("Erreur récupération auteur pour stats:", error.message);
+                            authorDetails = null;
+                        }
+                    }
+                    
+                    return {
+                        article: {
+                            ...item.article.toObject(),
+                            authorDetails: authorDetails
+                        },
+                        stats: {
+                            totalLikes: item.totalLikes
+                        }
+                    };
+                })
+        );
 
         // Calculer les statistiques par période (seulement pour les articles valides)
         let periodStats = [];
