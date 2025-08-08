@@ -159,6 +159,15 @@ const deleteArticle = async (req, res) => {
             return res.status(403).json({ message: "Seul un Admin peut supprimer un article." });
         }
 
+        // Supprimer les statistiques associées à l'article
+        try {
+            await ArticleStats.deleteMany({ article: req.params.id });
+            console.log(`✅ Statistiques supprimées pour l'article ${req.params.id}`);
+        } catch (statsError) {
+            console.error('⚠️ Erreur lors de la suppression des statistiques:', statsError.message);
+        }
+
+        // Supprimer l'article
         await article.deleteOne();
         res.json({ message: "Article supprimé avec succès." });
 

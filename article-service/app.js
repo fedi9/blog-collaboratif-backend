@@ -19,7 +19,7 @@ app.use(morgan('dev'));
 // Rate Limiting - Configuration pour la production
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // 60 requêtes par minute
+  max: 200, // 60 requêtes par minute
   message: 'Trop de requêtes depuis cette IP, réessayez dans 1 minute.',
   standardHeaders: true,
   legacyHeaders: false,

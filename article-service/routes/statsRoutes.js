@@ -2,7 +2,8 @@ const express = require('express');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const {
     getArticleStats,
-    getGlobalStats
+    getGlobalStats,
+    cleanOrphanedStats
 } = require('../controllers/statsController');
 
 const router = express.Router();
@@ -15,5 +16,8 @@ router.get('/article/:articleId', getArticleStats);
 
 // Obtenir les statistiques globales de likes (Admin seulement)
 router.get('/global', getGlobalStats);
+
+// Nettoyer les statistiques orphelines (Admin seulement)
+router.post('/clean-orphaned', cleanOrphanedStats);
 
 module.exports = router; 
