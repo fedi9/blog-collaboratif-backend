@@ -1,24 +1,19 @@
-// const express = require('express');
-// const { verifyToken } = require('../middlewares/authMiddleware');
-
-// const router = express.Router();
-
-// // Exemple de route protégée
-// router.get('/', verifyToken, (req, res) => {
-//     res.json({ message: 'Liste des commentaires' });
-// });
-
-// module.exports = router;
-
-
-
-// routes/commentRoutes.js
 const express = require('express');
 const router = express.Router();
+const commentController = require('../controllers/commentController');
+const { verifyToken } = require('../middlewares/authMiddleware');
 
-router.get('/', (req, res) => {
-    res.json({ message: 'Liste des commentaires (test)' });
-});
+// Routes publiques (pour lire les commentaires)
+router.get('/article/:articleId', commentController.getCommentsByArticle);
+router.get('/:commentId/replies', commentController.getReplies);
+
+// Routes protégées (nécessitent une authentification)
+router.use(verifyToken);
+
+router.post('/', commentController.createComment);
+router.put('/:commentId', commentController.updateComment);
+router.delete('/:commentId', commentController.deleteComment);
+router.post('/:commentId/like', commentController.toggleLike);
 
 module.exports = router;
 

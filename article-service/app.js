@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const articleRoutes = require('./routes/articleRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const pushNotificationRoutes = require('./routes/pushNotificationRoutes');
 
 const app = express();
 
@@ -46,6 +47,7 @@ console.log('⚠️  Rate limiting temporairement désactivé pour les tests');
 // Routes
 app.use('/api/articles', articleRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/push-notifications', pushNotificationRoutes);
 
 app.get('/', (req, res) => {
     res.send('Article Service API 🚀');

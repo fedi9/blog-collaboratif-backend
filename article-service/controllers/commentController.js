@@ -1,0 +1,249 @@
+const Comment = require('../models/Comment');
+const Article = require('../models/Article');
+
+// Obtenir tous les commentaires d'un article
+exports.getCommentsByArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+
+        const skip = (page - 1) * limit;
+
+        // Récupérer les commentaires parents (pas les réponses)
+        const comments = await Comment.find({
+            article: articleId,
+            parentComment: null,
+            isDeleted: false
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+        // Récupérer les réponses pour chaque commentaire
+        for (let comment of comments) {
+            const replies = await Comment.find({
+                parentComment: comment._id,
+                isDeleted: false
+            }).sort({ createdAt: 1 });
+            
+            comment.replies = replies;
+        }
+
+        // Compter le nombre total de commentaires
+        const totalComments = await Comment.countDocuments({
+            article: articleId,
+            parentComment: null,
+            isDeleted: false
+        });
+
+        res.json({
+            comments,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalComments / limit),
+            totalComments
+        });
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        res.status(500).json({ message: 'Erreur lors de la récupération des commentaires' });
+    }
+};
+
+// Créer un nouveau commentaire
+exports.createComment = async (req, res) => {
+    try {
+        const { articleId, content, parentCommentId } = req.body;
+        const userId = req.user.userId;
+
+        // Vérifier que l'article existe
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: 'Article non trouvé' });
+        }
+
+        // Créer le commentaire
+        const commentData = {
+            article: articleId,
+            author: userId,
+            authorName: req.user.username || req.user.email || 'Utilisateur',
+            content: content
+        };
+
+        if (parentCommentId) {
+            commentData.parentComment = parentCommentId;
+        }
+
+        const comment = new Comment(commentData);
+        await comment.save();
+
+        // Ne pas utiliser populate pour l'auteur car le modèle User n'est pas disponible
+        // await comment.populate('author', 'username email');
+
+        // Si c'est une réponse, ajouter à la liste des réponses du commentaire parent
+        if (parentCommentId) {
+            await Comment.findByIdAndUpdate(parentCommentId, {
+                $push: { replies: comment._id }
+            });
+        }
+
+        // Émettre l'événement Socket.io si le service est disponible
+        try {
+            const socketService = require('../services/socketService');
+            if (socketService.io) {
+                socketService.io.to(`article_${articleId}`).emit('comment_added', {
+                    comment: comment,
+                    type: parentCommentId ? 'reply' : 'comment'
+                });
+
+                // Notifier l'auteur de l'article si ce n'est pas lui qui commente
+                if (article.author.toString() !== userId) {
+                    socketService.sendNotificationToUser(article.author.toString(), {
+                        type: 'new_comment',
+                        title: 'Nouveau commentaire',
+                        message: `${req.user.username} a commenté votre article "${article.title}"`,
+                        articleId: articleId,
+                        commentId: comment._id
+                    });
+                }
+            }
+        } catch (socketError) {
+            console.log('Socket.io service not available:', socketError.message);
+        }
+
+        res.status(201).json({
+            message: 'Commentaire créé avec succès',
+            comment: comment
+        });
+    } catch (error) {
+        console.error('Error creating comment:', error);
+        res.status(500).json({ message: 'Erreur lors de la création du commentaire' });
+    }
+};
+
+// Mettre à jour un commentaire
+exports.updateComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Commentaire non trouvé' });
+        }
+
+        // Vérifier que l'utilisateur est l'auteur du commentaire
+        if (comment.author.toString() !== userId) {
+            return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à modifier ce commentaire' });
+        }
+
+        comment.content = content;
+        comment.isEdited = true;
+        comment.editedAt = new Date();
+        await comment.save();
+
+        await comment.populate('author', 'username email');
+
+        res.json({
+            message: 'Commentaire mis à jour avec succès',
+            comment: comment
+        });
+    } catch (error) {
+        console.error('Error updating comment:', error);
+        res.status(500).json({ message: 'Erreur lors de la mise à jour du commentaire' });
+    }
+};
+
+// Supprimer un commentaire
+exports.deleteComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user.userId;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Commentaire non trouvé' });
+        }
+
+        // Vérifier que l'utilisateur est l'auteur du commentaire ou un admin
+        if (comment.author.toString() !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer ce commentaire' });
+        }
+
+        // Suppression douce
+        comment.isDeleted = true;
+        await comment.save();
+
+        res.json({ message: 'Commentaire supprimé avec succès' });
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        res.status(500).json({ message: 'Erreur lors de la suppression du commentaire' });
+    }
+};
+
+// Liker/unliker un commentaire
+exports.toggleLike = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user.userId;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Commentaire non trouvé' });
+        }
+
+        const likeIndex = comment.likes.indexOf(userId);
+        if (likeIndex > -1) {
+            // Retirer le like
+            comment.likes.splice(likeIndex, 1);
+        } else {
+            // Ajouter le like
+            comment.likes.push(userId);
+        }
+
+        await comment.save();
+        await comment.populate('author', 'username email');
+
+        res.json({
+            message: likeIndex > -1 ? 'Like retiré' : 'Commentaire liké',
+            comment: comment,
+            userLiked: likeIndex === -1
+        });
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        res.status(500).json({ message: 'Erreur lors du like/unlike' });
+    }
+};
+
+// Obtenir les réponses d'un commentaire
+exports.getReplies = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+
+        const skip = (page - 1) * limit;
+
+        const replies = await Comment.find({
+            parentComment: commentId,
+            isDeleted: false
+        })
+        .populate('author', 'username email')
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+        const totalReplies = await Comment.countDocuments({
+            parentComment: commentId,
+            isDeleted: false
+        });
+
+        res.json({
+            replies,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalReplies / limit),
+            totalReplies
+        });
+    } catch (error) {
+        console.error('Error fetching replies:', error);
+        res.status(500).json({ message: 'Erreur lors de la récupération des réponses' });
+    }
+}; 

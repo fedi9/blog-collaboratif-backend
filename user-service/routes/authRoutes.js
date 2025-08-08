@@ -8,7 +8,12 @@ const router = express.Router();
 // 🔹 Génération d'un JWT
 function generateToken(user) {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { 
+      id: user._id, 
+      username: user.username,
+      email: user.email,
+      role: user.role 
+    },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );
@@ -52,8 +57,22 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Mot de passe incorrect' });
 
+    console.log('User found:', {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
+
+    console.log('Generated token payload:', {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
 
     res.json({ token, refreshToken, role: user.role });
   } catch (err) {
