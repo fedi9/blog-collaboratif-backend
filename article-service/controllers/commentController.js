@@ -141,8 +141,6 @@ exports.updateComment = async (req, res) => {
         comment.editedAt = new Date();
         await comment.save();
 
-        await comment.populate('author', 'username email');
-
         res.json({
             message: 'Commentaire mis à jour avec succès',
             comment: comment
@@ -201,7 +199,6 @@ exports.toggleLike = async (req, res) => {
         }
 
         await comment.save();
-        await comment.populate('author', 'username email');
 
         res.json({
             message: likeIndex > -1 ? 'Like retiré' : 'Commentaire liké',
@@ -226,7 +223,6 @@ exports.getReplies = async (req, res) => {
             parentComment: commentId,
             isDeleted: false
         })
-        .populate('author', 'username email')
         .sort({ createdAt: 1 })
         .skip(skip)
         .limit(parseInt(limit));
