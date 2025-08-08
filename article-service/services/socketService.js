@@ -32,7 +32,7 @@ class SocketService {
                 const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
                 console.log('Decoded token:', decoded);
                 
-                // Utiliser les bonnes propriétés du token
+                
                 socket.userId = decoded.id || decoded.userId;
                 socket.userRole = decoded.role;
                 socket.username = decoded.username || decoded.email || 'User';
@@ -60,7 +60,7 @@ class SocketService {
                 role: socket.userRole
             });
 
-            // Rejoindre la room de l'utilisateur
+            
             socket.join(`user_${socket.userId}`);
 
             // Écouter les événements de commentaires
@@ -84,7 +84,7 @@ class SocketService {
                         userRole: socket.userRole
                     });
                     
-                    // Vérifier que l'utilisateur est authentifié
+                    
                     if (!socket.userId) {
                         throw new Error('User not authenticated');
                     }
@@ -93,7 +93,7 @@ class SocketService {
                     const newCommentData = {
                         article: articleId,
                         author: socket.userId,
-                        authorName: socket.username, // Ajouter le nom d'utilisateur
+                        authorName: socket.username, 
                         content: content
                     };
 
@@ -106,10 +106,7 @@ class SocketService {
                     const comment = new Comment(newCommentData);
                     await comment.save();
 
-                    // Ne pas utiliser populate pour l'auteur car le modèle User n'est pas disponible
-                    // await comment.populate('author', 'username email');
-                    
-                    // Si c'est une réponse, ajouter à la liste des réponses du commentaire parent
+   
                     if (parentCommentId) {
                         await Comment.findByIdAndUpdate(parentCommentId, {
                             $push: { replies: comment._id }
@@ -120,14 +117,14 @@ class SocketService {
                     console.log('Emitting comment_added event to article room:', `article_${articleId}`);
                     console.log('Comment data being emitted:', comment);
                     
-                    // Préparer le commentaire avec toutes les informations nécessaires
+                    
                     const commentData = {
                         _id: comment._id,
                         article: comment.article,
                         author: {
                             _id: socket.userId,
                             username: socket.username,
-                            email: socket.username // Fallback
+                            email: socket.username 
                         },
                         authorName: socket.username,
                         content: comment.content,
@@ -173,13 +170,13 @@ class SocketService {
 
     // Méthode pour envoyer une notification à un utilisateur spécifique
     async sendNotificationToUser(userId, notification) {
-        // Notification via Socket.io (temps réel)
+        
         const user = this.connectedUsers.get(userId);
         if (user) {
             this.io.to(user.socketId).emit('notification', notification);
         }
 
-        // Notification push (Web Push API)
+        
         try {
             await pushNotificationService.sendNotificationToUser(userId, notification);
         } catch (error) {
@@ -192,12 +189,12 @@ class SocketService {
         this.io.to(`article_${articleId}`).emit('notification', notification);
     }
 
-    // Méthode pour obtenir la liste des utilisateurs connectés
+    
     getConnectedUsers() {
         return Array.from(this.connectedUsers.values());
     }
 
-    // Méthode pour vérifier si un utilisateur est connecté
+
     isUserConnected(userId) {
         return this.connectedUsers.has(userId);
     }

@@ -3,14 +3,14 @@ const mongoose = require('mongoose');
 const commentSchema = new mongoose.Schema({
     article: { type: mongoose.Schema.Types.ObjectId, ref: 'Article', required: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    authorName: { type: String, required: true }, // Nom d'utilisateur
+    authorName: { type: String, required: true }, 
     content: { type: String, required: true },
     parentComment: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
-    replies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }], // Pour les réponses
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Pour les likes
-    isEdited: { type: Boolean, default: false }, // Statut d'édition
-    editedAt: { type: Date }, // Date d'édition
-    isDeleted: { type: Boolean, default: false } // Suppression douce
+    replies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }], 
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
+    isEdited: { type: Boolean, default: false }, 
+    editedAt: { type: Date }, 
+    isDeleted: { type: Boolean, default: false } 
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

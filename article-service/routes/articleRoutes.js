@@ -17,7 +17,7 @@ router.post('/', verifyToken, async (req, res) => {
             content,
             image,
             tags,
-            author: req.user.id // récupéré via verifyToken
+            author: req.user.id // récupéré a travers verifyToken
         });
 
         await article.save();
@@ -29,7 +29,7 @@ router.post('/', verifyToken, async (req, res) => {
 
 
 /**
- * 📌 GET /api/articles
+ *  GET /api/articles
  * Query params :
  *  - search : mot-clé pour chercher dans le titre et le contenu
  *  - tag : filtrer par tag spécifique
@@ -45,7 +45,7 @@ router.get('/', verifyToken, async (req, res) => {
 
         const filter = {};
         
-        // Recherche dans le titre et le contenu
+        
         if (search && search.trim()) {
             const searchTerm = search.trim();
             filter.$or = [
@@ -55,7 +55,7 @@ router.get('/', verifyToken, async (req, res) => {
             console.log('🔍 Filtre de recherche appliqué:', filter);
         }
         
-        // Filtre par tag
+        
         if (tag && tag.trim()) {
             filter.tags = { $in: [tag.trim()] };
             console.log('🏷️ Filtre de tag appliqué:', filter);

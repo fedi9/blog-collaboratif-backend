@@ -10,7 +10,7 @@ const articleStatsSchema = new mongoose.Schema({
         type: Number, 
         default: 0 
     },
-    // Statistiques par jour
+    
     dailyLikes: [{
         date: { 
             type: Date, 
@@ -21,7 +21,7 @@ const articleStatsSchema = new mongoose.Schema({
             default: 0 
         }
     }],
-    // Statistiques par semaine
+    
     weeklyLikes: [{
         week: { 
             type: String, 
@@ -32,7 +32,7 @@ const articleStatsSchema = new mongoose.Schema({
             default: 0 
         }
     }],
-    // Statistiques par mois
+    
     monthlyLikes: [{
         month: { 
             type: String, 
@@ -84,7 +84,7 @@ articleStatsSchema.methods.updateDailyStats = function() {
         this.dailyLikes.push(dailyStat);
     }
     
-    // Mettre à jour avec le total actuel
+    
     dailyStat.likes = this.totalLikes;
 };
 

@@ -9,7 +9,7 @@ exports.getCommentsByArticle = async (req, res) => {
 
         const skip = (page - 1) * limit;
 
-        // Récupérer les commentaires parents (pas les réponses)
+        
         const comments = await Comment.find({
             article: articleId,
             parentComment: null,
@@ -19,7 +19,7 @@ exports.getCommentsByArticle = async (req, res) => {
         .skip(skip)
         .limit(parseInt(limit));
 
-        // Récupérer les réponses pour chaque commentaire
+        
         for (let comment of comments) {
             const replies = await Comment.find({
                 parentComment: comment._id,
@@ -54,13 +54,13 @@ exports.createComment = async (req, res) => {
         const { articleId, content, parentCommentId } = req.body;
         const userId = req.user.userId;
 
-        // Vérifier que l'article existe
+        
         const article = await Article.findById(articleId);
         if (!article) {
             return res.status(404).json({ message: 'Article non trouvé' });
         }
 
-        // Créer le commentaire
+        
         const commentData = {
             article: articleId,
             author: userId,
@@ -75,17 +75,14 @@ exports.createComment = async (req, res) => {
         const comment = new Comment(commentData);
         await comment.save();
 
-        // Ne pas utiliser populate pour l'auteur car le modèle User n'est pas disponible
-        // await comment.populate('author', 'username email');
-
-        // Si c'est une réponse, ajouter à la liste des réponses du commentaire parent
+       
         if (parentCommentId) {
             await Comment.findByIdAndUpdate(parentCommentId, {
                 $push: { replies: comment._id }
             });
         }
 
-        // Émettre l'événement Socket.io si le service est disponible
+        
         try {
             const socketService = require('../services/socketService');
             if (socketService.io) {
@@ -94,7 +91,7 @@ exports.createComment = async (req, res) => {
                     type: parentCommentId ? 'reply' : 'comment'
                 });
 
-                // Notifier l'auteur de l'article si ce n'est pas lui qui commente
+                
                 if (article.author.toString() !== userId) {
                     socketService.sendNotificationToUser(article.author.toString(), {
                         type: 'new_comment',
@@ -131,7 +128,7 @@ exports.updateComment = async (req, res) => {
             return res.status(404).json({ message: 'Commentaire non trouvé' });
         }
 
-        // Vérifier que l'utilisateur est l'auteur du commentaire
+        
         if (comment.author.toString() !== userId) {
             return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à modifier ce commentaire' });
         }
@@ -162,12 +159,12 @@ exports.deleteComment = async (req, res) => {
             return res.status(404).json({ message: 'Commentaire non trouvé' });
         }
 
-        // Vérifier que l'utilisateur est l'auteur du commentaire ou un admin
+        
         if (comment.author.toString() !== userId && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer ce commentaire' });
         }
 
-        // Suppression douce
+    
         comment.isDeleted = true;
         await comment.save();
 

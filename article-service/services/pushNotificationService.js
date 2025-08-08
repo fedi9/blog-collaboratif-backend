@@ -21,18 +21,18 @@ class PushNotificationService {
         try {
             const { endpoint, keys } = subscriptionData;
 
-            // Vérifier si l'abonnement existe déjà
+            
             let subscription = await Subscription.findOne({ endpoint });
 
             if (subscription) {
-                // Mettre à jour l'abonnement existant
+                
                 subscription.user = userId;
                 subscription.keys = keys;
                 subscription.isActive = true;
                 subscription.lastUsed = new Date();
                 await subscription.save();
             } else {
-                // Créer un nouvel abonnement
+                
                 subscription = new Subscription({
                     user: userId,
                     endpoint,
@@ -93,7 +93,7 @@ class PushNotificationService {
             const results = await Promise.allSettled(
                 subscriptions.map(async (subscription) => {
                     try {
-                        // Vérifier si les clés sont valides
+                    
                         if (!subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
                             console.log(`⚠️ Abonnement ${subscription._id} a des clés invalides, le désactiver`);
                             subscription.isActive = false;
@@ -109,7 +109,7 @@ class PushNotificationService {
                             payload
                         );
                         
-                        // Mettre à jour la date de dernière utilisation
+                        
                         subscription.lastUsed = new Date();
                         await subscription.save();
                         
@@ -118,7 +118,7 @@ class PushNotificationService {
                     } catch (error) {
                         console.error(`❌ Erreur lors de l'envoi de notification à ${subscription.endpoint}:`, error);
                         
-                        // Si l'abonnement est invalide, le désactiver
+                    
                         if (error.statusCode === 410 || error.statusCode === 404 || error.message.includes('p256dh value should be 65 bytes long')) {
                             subscription.isActive = false;
                             await subscription.save();
@@ -139,10 +139,10 @@ class PushNotificationService {
         }
     }
 
-    // Envoyer une notification à tous les utilisateurs d'un article
+    
     async sendNotificationToArticle(articleId, notification) {
         try {
-            // Cette méthode peut être étendue pour envoyer des notifications à tous les abonnés d'un article
+           
             console.log(`📢 Notification d'article ${articleId}: ${notification.title}`);
         } catch (error) {
             console.error('❌ Erreur lors de l\'envoi de notification d\'article:', error);

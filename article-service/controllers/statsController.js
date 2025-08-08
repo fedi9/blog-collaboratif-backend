@@ -10,7 +10,7 @@ exports.getArticleStats = async (req, res) => {
         let stats = await ArticleStats.findOne({ article: articleId });
         
         if (!stats) {
-            // Créer un nouvel stats si il n'existe pas
+            
             stats = new ArticleStats({
                 article: articleId,
                 totalLikes: 0
@@ -56,7 +56,7 @@ exports.getGlobalStats = async (req, res) => {
     try {
         const { period = 'daily', limit = 30 } = req.query;
 
-        // Vérifier que l'utilisateur est Admin
+        
         if (req.user.role !== 'Admin') {
             return res.status(403).json({ 
                 success: false, 
@@ -64,17 +64,17 @@ exports.getGlobalStats = async (req, res) => {
             });
         }
 
-        // Nettoyer les statistiques orphelines avant de récupérer les données
+    
         await cleanOrphanedStats();
 
-        // Récupérer tous les stats avec les articles populés
+    
         const allStats = await ArticleStats.find()
             .populate('article', 'title author createdAt')
             .sort({ totalLikes: -1 });
 
         // Filtrer les stats pour ne garder que les articles qui existent encore
         const validStats = allStats.filter(stats => {
-            return stats.article && stats.article.title; // Vérifier que l'article existe et a un titre
+            return stats.article && stats.article.title; 
         });
 
         // Calculer les totaux globaux (seulement pour les articles valides)
@@ -83,7 +83,7 @@ exports.getGlobalStats = async (req, res) => {
             return totals;
         }, { totalLikes: 0 });
 
-        // Récupérer les articles les plus likés (seulement les articles valides)
+        
         const topLikedArticles = validStats
             .sort((a, b) => (b.totalLikes || 0) - (a.totalLikes || 0))
             .slice(0, 10)
@@ -140,18 +140,18 @@ exports.getGlobalStats = async (req, res) => {
     }
 };
 
-// Fonction utilitaire pour nettoyer les statistiques orphelines
+
 async function cleanOrphanedStats() {
     try {
-        // Récupérer tous les ArticleStats
+        
         const allStats = await ArticleStats.find();
         let deletedCount = 0;
 
         for (const stats of allStats) {
-            // Vérifier si l'article existe encore
+            
             const article = await Article.findById(stats.article);
             if (!article) {
-                // L'article n'existe plus, supprimer les statistiques
+                
                 await ArticleStats.findByIdAndDelete(stats._id);
                 deletedCount++;
                 console.log(`🗑️ Statistiques orphelines supprimées pour l'article ${stats.article}`);
@@ -172,7 +172,7 @@ async function cleanOrphanedStats() {
 // Route pour nettoyer manuellement les statistiques orphelines (Admin seulement)
 exports.cleanOrphanedStats = async (req, res) => {
     try {
-        // Vérifier que l'utilisateur est Admin
+        
         if (req.user.role !== 'Admin') {
             return res.status(403).json({ 
                 success: false, 

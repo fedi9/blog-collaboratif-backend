@@ -9,7 +9,7 @@ const updateArticle = async (req, res) => {
             return res.status(404).json({ message: 'Article non trouvé.' });
         }
 
-        // 🔒 Règles de permission :
+        //  Règles de permission :
         // Admin & Éditeur → peuvent tout modifier
         // Rédacteur → peut modifier uniquement ses propres articles
         if (
@@ -37,29 +37,29 @@ const updateArticle = async (req, res) => {
 const likeArticle = async (req, res) => {
     try {
         const { articleId } = req.params;
-        const userId = req.user.id; // Utiliser req.user.id au lieu de req.user.userId
+        const userId = req.user.id;
         
         const article = await Article.findById(articleId);
         if (!article) {
             return res.status(404).json({ message: 'Article non trouvé.' });
         }
 
-        // Vérifier si l'utilisateur a déjà liké cet article
+       
         const userLikedIndex = article.likedBy.indexOf(userId);
         
         if (userLikedIndex > -1) {
-            // L'utilisateur a déjà liké → retirer le like
+          
             article.likedBy.splice(userLikedIndex, 1);
             article.likeCount = Math.max(0, article.likeCount - 1);
             await article.save();
             
-            // Mettre à jour les statistiques
+            
             let stats = await ArticleStats.findOne({ article: articleId });
             if (stats) {
                 await stats.decrementLikes();
             }
             
-            // Émettre l'événement Socket.io pour la mise à jour en temps réel
+          
             try {
                 const socketService = require('../services/socketService');
                 if (socketService.io) {
@@ -81,19 +81,19 @@ const likeArticle = async (req, res) => {
                 article: article
             });
         } else {
-            // L'utilisateur n'a pas encore liké → ajouter le like
+       
             article.likedBy.push(userId);
             article.likeCount += 1;
             await article.save();
             
-            // Mettre à jour les statistiques
+            
             let stats = await ArticleStats.findOne({ article: articleId });
             if (!stats) {
                 stats = new ArticleStats({ article: articleId, totalLikes: 0 });
             }
             await stats.incrementLikes();
             
-            // Émettre l'événement Socket.io pour la mise à jour en temps réel
+            
             try {
                 const socketService = require('../services/socketService');
                 if (socketService.io) {
@@ -126,7 +126,7 @@ const likeArticle = async (req, res) => {
 const checkUserLike = async (req, res) => {
     try {
         const { articleId } = req.params;
-        const userId = req.user.id; // Utiliser req.user.id au lieu de req.user.userId
+        const userId = req.user.id; 
         
         const article = await Article.findById(articleId);
         if (!article) {
@@ -154,7 +154,7 @@ const deleteArticle = async (req, res) => {
             return res.status(404).json({ message: "Article non trouvé." });
         }
 
-        // 🔐 Vérification de rôle
+        
         if (req.user.role !== 'Admin') {
             return res.status(403).json({ message: "Seul un Admin peut supprimer un article." });
         }
