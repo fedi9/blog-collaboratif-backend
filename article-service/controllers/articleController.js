@@ -59,6 +59,21 @@ const likeArticle = async (req, res) => {
                 await stats.decrementLikes();
             }
             
+            // Émettre l'événement Socket.io pour la mise à jour en temps réel
+            try {
+                const socketService = require('../services/socketService');
+                if (socketService.io) {
+                    socketService.io.to(`article_${articleId}`).emit('article_liked', {
+                        articleId: articleId,
+                        likeCount: article.likeCount,
+                        userLiked: false,
+                        userId: userId
+                    });
+                }
+            } catch (socketError) {
+                console.log('Socket.io service not available:', socketError.message);
+            }
+            
             res.json({
                 message: 'Like retiré avec succès',
                 likeCount: article.likeCount,
@@ -77,6 +92,21 @@ const likeArticle = async (req, res) => {
                 stats = new ArticleStats({ article: articleId, totalLikes: 0 });
             }
             await stats.incrementLikes();
+            
+            // Émettre l'événement Socket.io pour la mise à jour en temps réel
+            try {
+                const socketService = require('../services/socketService');
+                if (socketService.io) {
+                    socketService.io.to(`article_${articleId}`).emit('article_liked', {
+                        articleId: articleId,
+                        likeCount: article.likeCount,
+                        userLiked: true,
+                        userId: userId
+                    });
+                }
+            } catch (socketError) {
+                console.log('Socket.io service not available:', socketError.message);
+            }
             
             res.json({
                 message: 'Article liké avec succès',
