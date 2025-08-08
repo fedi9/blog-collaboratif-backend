@@ -1,4 +1,5 @@
 const Article = require('../models/Article');
+const ArticleStats = require('../models/ArticleStats');
 
 // PUT /api/articles/:id
 const updateArticle = async (req, res) => {
@@ -52,6 +53,12 @@ const likeArticle = async (req, res) => {
             article.likeCount = Math.max(0, article.likeCount - 1);
             await article.save();
             
+            // Mettre à jour les statistiques
+            let stats = await ArticleStats.findOne({ article: articleId });
+            if (stats) {
+                await stats.decrementLikes();
+            }
+            
             res.json({
                 message: 'Like retiré avec succès',
                 likeCount: article.likeCount,
@@ -63,6 +70,13 @@ const likeArticle = async (req, res) => {
             article.likedBy.push(userId);
             article.likeCount += 1;
             await article.save();
+            
+            // Mettre à jour les statistiques
+            let stats = await ArticleStats.findOne({ article: articleId });
+            if (!stats) {
+                stats = new ArticleStats({ article: articleId, totalLikes: 0 });
+            }
+            await stats.incrementLikes();
             
             res.json({
                 message: 'Article liké avec succès',
