@@ -132,7 +132,13 @@ exports.getGlobalStats = async (req, res) => {
             validStats.forEach(stats => {
                 if (stats.dailyLikes && Array.isArray(stats.dailyLikes)) {
                     stats.dailyLikes.forEach(stat => {
-                        const dateKey = stat.date.toISOString().split('T')[0];
+                        // Utiliser le fuseau horaire local au lieu d'UTC
+                        const date = new Date(stat.date);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateKey = `${year}-${month}-${day}`;
+                        
                         if (!dailyStatsMap.has(dateKey)) {
                             dailyStatsMap.set(dateKey, {
                                 date: dateKey,

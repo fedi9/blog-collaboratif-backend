@@ -69,12 +69,15 @@ articleStatsSchema.methods.decrementLikes = function() {
 
 // Méthode pour mettre à jour les statistiques quotidiennes
 articleStatsSchema.methods.updateDailyStats = function() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Utiliser le fuseau horaire local (UTC+1 pour la Tunisie)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    let dailyStat = this.dailyLikes.find(stat => 
-        stat.date.getTime() === today.getTime()
-    );
+    let dailyStat = this.dailyLikes.find(stat => {
+        const statDate = new Date(stat.date);
+        const statDateLocal = new Date(statDate.getFullYear(), statDate.getMonth(), statDate.getDate());
+        return statDateLocal.getTime() === today.getTime();
+    });
     
     if (!dailyStat) {
         dailyStat = {
